@@ -49,7 +49,7 @@ func main() {
 		}
 
 		// The incoming message's message ID, which is an UUID.
-		//	id, _ := uuid.FromString(msg.MessageID)
+		id, _ := uuid.FromString(msg.MessageID)
 		log.Println("user id", msg.UserID)
 		// Create a request
 		//log.Panicln(msg.UserID)
