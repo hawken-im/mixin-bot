@@ -49,8 +49,8 @@ func main() {
 		}
 
 		// The incoming message's message ID, which is an UUID.
-		id, _ := uuid.FromString(msg.MessageID)
-
+		//	id, _ := uuid.FromString(msg.MessageID)
+		log.Println("user id", msg.UserID)
 		// Create a request
 		//log.Panicln(msg.UserID)
 		reply := &mixin.MessageRequest{
@@ -65,11 +65,11 @@ func main() {
 			MessageID: uuid.NewV5(id, "reply").String(),
 			// Our bot just reply the same category and the sam content of the incoming message
 			// So, we copy the category and data
-			Category: mixin.MessageCategoryPlainText,
-			//Data:  msg.Data
+			Category: msg.Category,
+			Data:     msg.Data,
 
 			//Data: msg.UserID,
-			Data: "Hello",
+			//Data: "Hello",
 		}
 		// Send the response
 		return client.SendMessage(ctx, reply)
