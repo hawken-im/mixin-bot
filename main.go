@@ -52,6 +52,7 @@ func main() {
 		id, _ := uuid.FromString(msg.MessageID)
 
 		// Create a request
+		//log.Panicln(msg.UserID)
 		reply := &mixin.MessageRequest{
 			// Reuse the conversation between the sender and the bot.
 			// There is an unique UUID for each conversation.
@@ -64,9 +65,11 @@ func main() {
 			MessageID: uuid.NewV5(id, "reply").String(),
 			// Our bot just reply the same category and the sam content of the incoming message
 			// So, we copy the category and data
-			Category: msg.Category,
+			Category: mixin.MessageCategoryPlainText,
 			//Data:  msg.Data
-			Data: msg.UserID,
+
+			//Data: msg.UserID,
+			Data: "Hello",
 		}
 		// Send the response
 		return client.SendMessage(ctx, reply)
