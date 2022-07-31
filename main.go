@@ -6,6 +6,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/fox-one/mixin-sdk-go"
@@ -50,41 +52,44 @@ func main() {
 
 		// The incoming message's message ID, which is an UUID.
 		id, _ := uuid.FromString(msg.MessageID)
-		log.Println("user id", msg.UserID)
+
 		// Create a request
-		//log.Panicln(msg.UserID)
 		reply := &mixin.MessageRequest{
 			// Reuse the conversation between the sender and the bot.
 			// There is an unique UUID for each conversation.
 			ConversationID: msg.ConversationID,
 			// The user ID of the recipient.
-			// Our bot will reply messages, so here is the sender's ID of each incoming message.
+			// The bot will reply messages, so here is the sender's ID of each incoming message.
 			RecipientID: msg.UserID,
 			// Create a new message id to reply, it should be an UUID never used by any other message.
 			// Create it with a "reply" and the incoming message ID.
 			MessageID: uuid.NewV5(id, "reply").String(),
-			// Our bot just reply the same category and the sam content of the incoming message
+			// The bot just reply the same category and the same content of the incoming message
 			// So, we copy the category and data
 			Category: msg.Category,
 			Data:     msg.Data,
-
-			//Data: msg.UserID,
-			//Data: "Hello",
 		}
 		// Send the response
 		return client.SendMessage(ctx, reply)
 	}
 
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+	defer stop()
 
 	// Start the message loop.
 	for {
-		// Pass the callback function into the `BlazeListenFunc`
-		if err := client.LoopBlaze(ctx, mixin.BlazeListenFunc(h)); err != nil {
-			log.Printf("LoopBlaze: %v", err)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second):
+			// Pass the callback function into the `BlazeListenFunc`
+			if err := client.LoopBlaze(ctx, mixin.BlazeListenFunc(h)); err != nil {
+				log.Printf("LoopBlaze: %v", err)
+			}
 		}
-
-		// Sleep for a while
-		time.Sleep(time.Second)
 	}
 }
