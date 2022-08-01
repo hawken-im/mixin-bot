@@ -107,7 +107,7 @@ func main() {
 			// The bot just reply the same category and the same content of the incoming message
 			// So, we copy the category and data
 			Category: mixin.MessageCategoryPlainText,
-			Data:     base64.StdEncoding.EncodeToString([]byte(*text)),
+			Data:     base64.StdEncoding.EncodeToString([]byte("haha")),
 		}
 		// Send the response
 		return client.SendMessage(ctx, reply)
