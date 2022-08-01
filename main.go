@@ -50,7 +50,8 @@ func main() {
 		log.Fatalln("use a bot keystore instead")
 	}
 
-	receiptID := me.App.CreatorID
+	//receiptID := me.App.CreatorID
+	receiptID := "74c81e56-85e7-4d19-bcca-ee15cb88d1df"
 
 	sessions, err := client.FetchSessions(ctx, []string{receiptID})
 	if err != nil {
