@@ -68,7 +68,7 @@ func main() {
 			// So, we copy the category and data
 			Category: msg.Category,
 			//Data:     msg.Data,
-			Data: "ACK",
+			Data: "hello world",
 		}
 		// Send the response
 		return client.SendMessage(ctx, reply)
