@@ -106,8 +106,8 @@ func main() {
 			MessageID: uuid.NewV5(id, "reply").String(),
 			// The bot just reply the same category and the same content of the incoming message
 			// So, we copy the category and data
-			Category: msg.Category,
-			Data:     msg.Data,
+			Category: mixin.MessageCategoryPlainText,
+			Data:     "haha Data",
 		}
 		// Send the response
 		return client.SendMessage(ctx, reply)
