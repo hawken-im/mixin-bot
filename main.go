@@ -67,7 +67,8 @@ func main() {
 			// The bot just reply the same category and the same content of the incoming message
 			// So, we copy the category and data
 			Category: msg.Category,
-			Data:     msg.Data,
+			//Data:     msg.Data,
+			Data: "ACK",
 		}
 		// Send the response
 		return client.SendMessage(ctx, reply)
