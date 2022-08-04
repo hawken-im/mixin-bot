@@ -1,4 +1,4 @@
-package oauth
+package main
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ const (
 	mixinOAuthURL = "https://api.mixin.one/oauth/token"
 )
 
-func GetOauth() {
+func main() {
 	if clientID == "" || clientSecret == "" {
 		fmt.Println("ERROR clientID or clientSecret is empty, exit.")
 		os.Exit(1)

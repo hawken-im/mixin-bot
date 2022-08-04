@@ -119,6 +119,7 @@ func main() {
 		syscall.SIGTERM,
 	)
 	defer stop()
+
 	// Start the message loop.
 	for {
 		select {

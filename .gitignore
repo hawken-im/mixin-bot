@@ -2,3 +2,4 @@
 secret
 keystore.json
 config.yaml
+.DS_Store
