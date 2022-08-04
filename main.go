@@ -17,7 +17,7 @@ import (
 
 var (
 	// Specify the keystore file in the -config parameter
-	config = flag.String("config", "", "keystore file path")
+	config = flag.String("config", "./config/keystore.json", "keystore file path")
 	text   = flag.String("text", "hello world", "text message")
 )
 
