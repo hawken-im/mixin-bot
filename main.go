@@ -55,7 +55,7 @@ func main() {
 	}
 
 	//receiptID := me.App.CreatorID
-	receiptID := "74c81e56-85e7-4d19-bcca-ee15cb88d1df"
+	receiptID := "559c2f11-8e77-44b8-8b86-be898fad5e47"
 
 	sessions, err := client.FetchSessions(ctx, []string{receiptID})
 	if err != nil {
