@@ -84,7 +84,7 @@ func main() {
 	b, _ := json.Marshal(receipts)
 	log.Println(string(b))
 
-	h := func(ctx context.Context, msg *mixin.MessageView) error {
+	h := func(ctx context.Context, msg *mixin.MessageView, userID string) error {
 		// if there is no valid user id in the message, drop it
 		if userID, _ := uuid.FromString(msg.UserID); userID == uuid.Nil {
 			return nil
