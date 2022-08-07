@@ -25,24 +25,12 @@ const (
 
 var (
 	// Specify the keystore file in the -config parameter
-	config          = flag.String("config", "./config/keystore.json", "keystore file path")
-	text            = flag.String("text", "hello world", "text message")
-	clientSecret    = "8c50cb398bf58f342e5ccf43537004485d1443f66df0241fca492df52bdbdd0a"
-	clientIDBot     = "33d79ecd-1293-47cd-b00c-10e889692a3c"
-	code            = ""
-	token           = ""
-	scope           = ""
-	responseContent = ""
+	config       = flag.String("config", "./config/keystore.json", "keystore file path")
+	text         = flag.String("text", "hello world", "text message")
+	clientSecret = "8c50cb398bf58f342e5ccf43537004485d1443f66df0241fca492df52bdbdd0a"
+	clientID     = ""
+	code         = ""
 )
-
-type responseFromAuth struct {
-	Data InData `json:"data"`
-}
-
-type InData struct {
-	AccessToken string `json:"access_token"`
-	Scope       string `json:"scope"`
-}
 
 func main() {
 	ctx := context.Background()
@@ -54,6 +42,13 @@ func main() {
 	if err != nil {
 		log.Panicln(err)
 	}
+
+	// Read the keystore file as json into mixin.Keystore, which is a go struct
+	var cliStore mixin.Keystore
+	if err := json.NewDecoder(f).Decode(&cliStore); err != nil {
+		log.Panicln(err)
+	}
+	clientID = cliStore.ClientID
 
 	//Run a http thread until get the code.
 	http.HandleFunc("/login", loginHandler)
@@ -69,45 +64,22 @@ func main() {
 		log.Println("Code geto:", code)
 	}
 
-	for {
-		if responseContent != "" {
-			break
-		}
-		time.Sleep(1 * time.Second)
-		log.Println("response content geto:", responseContent)
+	token, scope, err := mixin.AuthorizeToken(ctx, clientID, clientSecret, code, "")
+	if token != "" {
+		log.Println("token", token)
 	}
-	var jsonData responseFromAuth
-
-	err = json.Unmarshal([]byte(responseContent), &jsonData) // here!
-
 	if err != nil {
-		panic(err)
+		log.Printf("AuthorizeToken: %v", err)
+		return
 	}
+	log.Println("token1", token)
+	log.Println("scope", scope)
 
-	// test struct data
-	fmt.Println(jsonData)
-	token = jsonData.Data.AccessToken
-	scope = jsonData.Data.Scope
-	fmt.Println("token is", token)
-	fmt.Println("scope is", scope)
-	client1 := mixin.NewFromAccessToken(token)
+	client := mixin.NewFromAccessToken(token)
 
-	//TODO//
-	//USE Token to get some authority
+	log.Println("client id", client.ClientID)
 
-	// Read the keystore file as json into mixin.Keystore, which is a go struct
-	var store mixin.Keystore
-	if err := json.NewDecoder(f).Decode(&store); err != nil {
-		log.Panicln(err)
-	}
-	clientBot, err := mixin.NewFromKeystore(&store)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	log.Println("client id", clientBot.ClientID)
-
-	me, err := clientBot.UserMe(ctx)
+	me, err := client.UserMe(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -118,7 +90,8 @@ func main() {
 
 	//receiptID := me.App.CreatorID
 	receiptID := "559c2f11-8e77-44b8-8b86-be898fad5e47"
-	sessions, err := clientBot.FetchSessions(ctx, []string{receiptID})
+
+	sessions, err := client.FetchSessions(ctx, []string{receiptID})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -126,18 +99,18 @@ func main() {
 	_ = sessions
 
 	req := &mixin.MessageRequest{
-		ConversationID: mixin.UniqueConversationID(clientBot.ClientID, receiptID),
+		ConversationID: mixin.UniqueConversationID(client.ClientID, receiptID),
 		RecipientID:    receiptID,
 		MessageID:      mixin.RandomTraceID(),
 		Category:       mixin.MessageCategoryPlainText,
 		Data:           base64.StdEncoding.EncodeToString([]byte(*text)),
 	}
 
-	if err := clientBot.EncryptMessageRequest(req, sessions); err != nil {
+	if err := client.EncryptMessageRequest(req, sessions); err != nil {
 		log.Fatalln(err)
 	}
 
-	receipts, err := clientBot.SendEncryptedMessages(ctx, []*mixin.MessageRequest{req})
+	receipts, err := client.SendEncryptedMessages(ctx, []*mixin.MessageRequest{req})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -171,7 +144,7 @@ func main() {
 			Data:     base64.StdEncoding.EncodeToString([]byte("haha")),
 		}
 		// Send the response
-		return client1.SendMessage(ctx, reply)
+		return client.SendMessage(ctx, reply)
 	}
 
 	_, stop := signal.NotifyContext( //before, it was ctx,stop := blabla
@@ -188,7 +161,7 @@ func main() {
 			return
 		case <-time.After(time.Second):
 			// Pass the callback function into the `BlazeListenFunc`
-			if err := client1.LoopBlaze(ctx, mixin.BlazeListenFunc(h)); err != nil {
+			if err := client.LoopBlaze(ctx, mixin.BlazeListenFunc(h)); err != nil {
 				log.Printf("LoopBlaze: %v", err)
 			}
 		}
@@ -198,12 +171,11 @@ func main() {
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	_url := "https://mixin.one/oauth/authorize?client_id=%s&scope=%s&response_type=code&return_to=%s"
 	return_to := ""
-	_url = fmt.Sprintf(_url, clientIDBot, "PROFILE:READ", return_to)
+	_url = fmt.Sprintf(_url, clientID, "PROFILE:READ", return_to)
 	http.Redirect(w, r, _url, http.StatusFound)
 }
 
 func oauthHandler(w http.ResponseWriter, r *http.Request) {
-
 	query := r.URL.Query()
 	code = query.Get("code")
 	if len(code) != 64 {
@@ -213,7 +185,7 @@ func oauthHandler(w http.ResponseWriter, r *http.Request) {
 
 	payload := fmt.Sprintf(
 		`{"client_id": "%s", "code": "%s", "client_secret": "%s"}`,
-		clientIDBot, code, clientSecret,
+		clientID, code, clientSecret,
 	)
 
 	client := http.Client{
@@ -247,7 +219,6 @@ func oauthHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, msg)
 		return
 	}
-	fmt.Println(string(content))
+
 	fmt.Fprint(w, string(content))
-	responseContent = string(content)
 }
